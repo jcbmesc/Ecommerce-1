@@ -11,9 +11,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.Ecomerce.model.Producto;
 import com.Ecomerce.model.Usuario;
+import com.Ecomerce.service.CargarImagenS;
 import com.Ecomerce.service.ProductoS;
 @Controller
 @RequestMapping("/productos")
@@ -23,6 +26,8 @@ public class ProductoC {
 	
 	@Autowired
 	private ProductoS productoS;
+	@Autowired
+	private CargarImagenS Upload;
 	
 	@GetMapping("")
 	public String Show(Model model) {
@@ -34,10 +39,27 @@ public String create() {
 		return "productos/create";
 	}
 	@PostMapping("/save")
-	public <usuario> String save(Producto Producto) {
+	public <usuario> String save(Producto Producto,@RequestParam("img")MultipartFile file) {
 		LOGGER.info("objeto Producto{}", Producto);
 		Usuario u= new Usuario(1, "", "", "", "", "", "", "");
 		Producto.setUsuario(u);
+		
+		//foto
+		if (Producto.getId()==null) {
+			String nombreImagen= Upload.saveImage(file);
+			Producto.setImagen(nombreImagen);
+		}else {
+			if(file.isEmpty()) {
+				Producto p= new Producto();
+				p=productoS.get(Producto.getId()).get();
+				Producto.setImagen(p.getImagen());
+			}else {
+				String nombreImagen= Upload.saveImage(file);
+				Producto.setImagen(nombreImagen);
+			}
+		}
+			
+		
 		productoS.save(Producto);
 		return "redirect:/productos";
 	}
@@ -50,6 +72,7 @@ public String create() {
 		model.addAttribute("producto", producto);
 		return "productos/edit";
 		
+		
 	}
 	@PostMapping("/update")
 	public String UpDate(Producto producto) {
@@ -61,6 +84,8 @@ public String create() {
 		productoS.delete(id);
 		return "redirect:/productos";
 	}
+	
+	
 	
 	
 }
